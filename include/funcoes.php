@@ -1,8 +1,6 @@
 <?php
 
-date_default_timezone_set('America/Sao_Paulo');
-
-function login(mysqli $conn, string $username, string $password) {
+function login(mysqli $conn, string $username, string $password): bool {
     // String de consulta
     $sql = "SELECT * FROM admin WHERE email = ? AND senha = ?";
     
@@ -25,7 +23,7 @@ function login(mysqli $conn, string $username, string $password) {
 
 /*****************************************************************************/
 
-function get_all_vagas_livres(mysqli $conn) {
+function get_all_vagas_livres(mysqli $conn): array | false {
     // Armazena o resultado da consulta
     $result_set = [];
 
@@ -48,7 +46,7 @@ function get_all_vagas_livres(mysqli $conn) {
 
 /*****************************************************************************/
 
-function get_all_vagas_ocupadas(mysqli $conn) {
+function get_all_vagas_ocupadas(mysqli $conn): array | false{
     // Armazena o resultado da consulta
     $result_set = [];
 
@@ -74,7 +72,7 @@ function get_all_vagas_ocupadas(mysqli $conn) {
 
 // /*****************************************************************************/
 
-function registrar_entrada(mysqli $conn, int $idVaga, string $placa) {
+function registrar_entrada(mysqli $conn, int $idVaga, string $placa): bool {
     $idCarro = get_idCarro($conn, $placa);
 
     // String de consulta
@@ -82,7 +80,7 @@ function registrar_entrada(mysqli $conn, int $idVaga, string $placa) {
 
     // Preparação da consulta
     $stmt = mysqli_prepare($conn, $sql);
-    mysqli_stmt_bind_param($stmt, 'ss', $idCarro, $idVaga);
+    mysqli_stmt_bind_param($stmt, 'is', $idCarro, $idVaga);
 
     // Execução da consulta
     if (mysqli_stmt_execute($stmt)) {
@@ -94,8 +92,39 @@ function registrar_entrada(mysqli $conn, int $idVaga, string $placa) {
 
 // /*****************************************************************************/
 
-function registrar_saida(mysqli $conn, int $idLocacao) {
+function registrar_saida(mysqli $conn, int $idLocacao): bool {
     $sql = "UPDATE Locacao SET saida = CURRENT_TIMESTAMP WHERE idLocacao = ?";
+
+    $stmt = mysqli_prepare($conn, $sql);
+    mysqli_stmt_bind_param($stmt, 'i', $idLocacao);
+
+    if (!mysqli_stmt_execute($stmt)) {
+        return false;
+    }
+
+    $sql = "UPDATE Vaga 
+            INNER JOIN Locacao ON fk_vaga = idVaga
+            SET ocupado = 0 WHERE idLocacao = ?";
+
+    $stmt = mysqli_prepare($conn, $sql);
+    mysqli_stmt_bind_param($stmt, 'i', $idLocacao);
+
+    if (!mysqli_stmt_execute($stmt)) {
+        return false;
+    }
+
+    $valor = get_valor_locacao($conn, $idLocacao);
+
+    $sql = "INSERT INTO Preco VALUES (DEFAULT, ?) WHERE fk_locacao = ?";
+
+    $stmt = mysqli_prepare($conn, $sql);
+    mysqli_stmt_bind_param($stmt, 'di', $valor, $idLocacao);
+
+    if (!mysqli_stmt_execute($stmt)) {
+        return false;
+    }
+
+    return true;
 }
 
 // /*****************************************************************************/
@@ -136,4 +165,35 @@ function get_idCarro(mysqli $conn, string $placa): int | false {
     }
 
     return $idCarro;
+}
+
+// /*****************************************************************************/
+
+function get_valor_locacao(mysqli $conn, int $idLocacao): float {
+    $sql = "SELECT entrada, saida FROM Locacao WHERE idLocacao = ?";
+
+    $stmt = mysqli_prepare($conn, $sql);
+    mysqli_stmt_bind_param($stmt, 'i', $idLocacao);
+    
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+
+    $row = mysqli_fetch_assoc($result);
+
+    $from_time = strtotime($row['entrada']);
+    $to_time = strtotime($row['saida']);
+    $tempo_no_estacionamento = round(abs($from_time - $to_time) / 60, 2); // tempo em minutos
+
+    $multa_hora_adicional = 9.00;
+    
+    if ($tempo_no_estacionamento <= 15)
+        $total_pagar = 0;
+    elseif ($tempo_no_estacionamento > 15 && $tempo_no_estacionamento <= 60)
+        $total_pagar = 27.00;
+    elseif ($tempo_no_estacionamento > 60 && $tempo_no_estacionamento <= 120)
+        $total_pagar = 32.00;
+    else
+        $total_pagar = 32.00 + ($multa_hora_adicional * ceil(($tempo_no_estacionamento - 120) / 60));
+
+    return $total_pagar;
 }
