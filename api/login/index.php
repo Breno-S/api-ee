@@ -68,7 +68,7 @@ if ($method == 'POST') {
         $username = $data['username'];
         $password = $data['password'];
 
-        if (login($con, $username, $password)) {
+        if (login($conn, $username, $password)) {
             //token JWT
             $key = 'parking420';
             $tokenId = base64_encode(random_bytes(32));
