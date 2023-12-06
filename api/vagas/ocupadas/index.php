@@ -124,19 +124,27 @@ if ($method == 'GET') {
     //     }
     // } else {
         
-        if ($all_vagas = get_all_vagas_ocupadas($conn)) {
+        $all_vagas = get_all_vagas_ocupadas($conn);
+
+        if (!($all_vagas === false)) {
             $response['status'] = "200 OK";
             $response['message'] = "Todas as vagas ocupadas";
 
-            
+            if (count($all_vagas) == 0) {
+                $response['data'] = [
+                    "total" => count($all_vagas),
+                    "vagas" => null
+                ];
+            } else {
 
-            $response['data'] = [
-                "total" => count($all_vagas),
-                "vagas" => []
-            ];
+                $response['data'] = [
+                    "total" => count($all_vagas),
+                    "vagas" => []
+                ];
 
-            foreach ($all_vagas as $indice => $dados_sala) {
-                array_push($response['data']['vagas'], $dados_sala);
+                foreach ($all_vagas as $indice => $dados_sala) {
+                    array_push($response['data']['vagas'], $dados_sala);
+                }
             }
         } else {
             http_response_code(500);

@@ -77,11 +77,11 @@ function registrar_entrada(mysqli $conn, int $idVaga, string $placa): bool {
     $idCarro = get_idCarro($conn, $placa);
 
     // String de consulta
-    $sql = "INSERT INTO Locacao VALUES (DEFAULT, DEFAULT, DEFAULT, ?, ?)";
+    $sql = "INSERT INTO Locacao VALUES (DEFAULT, ?, ?, DEFAULT, DEFAULT, DEFAULT)";
 
     // Preparação da consulta
     $stmt = mysqli_prepare($conn, $sql);
-    mysqli_stmt_bind_param($stmt, 'is', $idCarro, $idVaga);
+    mysqli_stmt_bind_param($stmt, 'ii', $idVaga, $idCarro);
 
     // Execução da consulta
     if (mysqli_stmt_execute($stmt)) {
