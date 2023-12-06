@@ -46,7 +46,7 @@ function get_all_vagas_livres(mysqli $conn): array | false {
 
 /*****************************************************************************/
 
-function get_all_vagas_ocupadas(mysqli $conn): array | false{
+function get_all_vagas_ocupadas(mysqli $conn): array | false {
     // Armazena o resultado da consulta
     $result_set = [];
 
@@ -63,6 +63,7 @@ function get_all_vagas_ocupadas(mysqli $conn): array | false{
         while ($row = mysqli_fetch_assoc($result)) {
             $result_set[] = $row;
         }
+
 
         return $result_set;
     }
@@ -84,7 +85,19 @@ function registrar_entrada(mysqli $conn, int $idVaga, string $placa): bool {
 
     // Execução da consulta
     if (mysqli_stmt_execute($stmt)) {
-        return true;
+        $idLocacao = mysqli_insert_id($conn);
+
+        $sql = "UPDATE Vaga 
+                INNER JOIN Locacao ON fk_vaga = idVaga
+                SET ocupado = 1 WHERE idLocacao = ?";
+
+        // Preparação da consulta
+        $stmt = mysqli_prepare($conn, $sql);
+        mysqli_stmt_bind_param($stmt, 'i', $idLocacao);
+        
+        if (mysqli_stmt_execute($stmt)) {
+            return true;
+        }
     }
     
     return false;    
@@ -152,7 +165,7 @@ function get_idCarro(mysqli $conn, string $placa): int | false {
 
     } else {
         // String de consulta
-        $sql = "INSERT INTO Carro VALUES (DEFAULT, '$placa')";
+        $sql = "INSERT INTO Carro VALUES (DEFAULT, ?)";
 
         // Preparação da consulta
         $stmt = mysqli_prepare($conn, $sql);
@@ -196,4 +209,32 @@ function get_valor_locacao(mysqli $conn, int $idLocacao): float {
         $total_pagar = 32.00 + ($multa_hora_adicional * ceil(($tempo_no_estacionamento - 120) / 60));
 
     return $total_pagar;
+}
+
+function valida_placa(string $placa): bool {
+    $pattern = '/^[A-Z]{3}[0-9]{1}[A-Z0-9]{1}[0-9]{2}$/';
+
+    if (preg_match_all($pattern, $placa)){
+        return true;
+    }
+    
+    return false;
+}
+
+function procura_copia(mysqli $conn, string $placa): bool {
+    $sql = "SELECT COUNT(*) AS isParked FROM Locacao INNER JOIN Carro ON fk_carro = idCarro INNER JOIN Vaga ON fk_vaga = idVaga WHERE placa = ? AND ocupado = 1";
+    
+    $stmt = mysqli_prepare($conn, $sql);
+    mysqli_stmt_bind_param($stmt, 's', $placa);
+    
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+
+    $row = mysqli_fetch_assoc($result);
+    
+    if($row['isParked']) {
+        return true;
+    }
+
+    return false;
 }
