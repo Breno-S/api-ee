@@ -238,3 +238,28 @@ function procura_copia(mysqli $conn, string $placa): bool {
 
     return false;
 }
+
+function get_all_faturas(mysqli $conn): array | false{
+    // Armazena o resultado da consulta
+    $result_set = [];
+
+    // String de consulta
+    $sql = "SELECT * FROM Locacao
+            INNER JOIN Vaga ON fk_vaga = idVaga
+            INNER JOIN Carro ON fk_carro = idCarro
+            WHERE saida IS NOT NULL AND TIMESTAMPDIFF(DAY, saida, NOW()) < 30";
+
+    // Execução da consulta
+    if ($result = mysqli_query($conn, $sql)) {
+            
+        // Agrupar os resultados
+        while ($row = mysqli_fetch_assoc($result)) {
+            $result_set[] = $row;
+        }
+
+        return $result_set;
+    }
+
+    return false;
+
+}
