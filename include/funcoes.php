@@ -128,7 +128,7 @@ function registrar_saida(mysqli $conn, int $idLocacao): bool {
 
     $valor = get_valor_locacao($conn, $idLocacao);
 
-    $sql = "INSERT INTO Preco VALUES (DEFAULT, ?) WHERE fk_locacao = ?";
+    $sql = "UPDATE Locacao SET preco = ? WHERE idLocacao = ?";
 
     $stmt = mysqli_prepare($conn, $sql);
     mysqli_stmt_bind_param($stmt, 'di', $valor, $idLocacao);
