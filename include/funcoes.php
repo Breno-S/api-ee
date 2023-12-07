@@ -244,7 +244,7 @@ function get_all_faturas(mysqli $conn): array | false{
     $result_set = [];
 
     // String de consulta
-    $sql = "SELECT * FROM Locacao
+    $sql = "SELECT idLocacao, numero AS vaga, placa, entrada, saida, preco FROM Locacao
             INNER JOIN Vaga ON fk_vaga = idVaga
             INNER JOIN Carro ON fk_carro = idCarro
             WHERE saida IS NOT NULL AND TIMESTAMPDIFF(DAY, saida, NOW()) < 30";
