@@ -139,6 +139,7 @@ if ($method == 'GET') {
 
                 $response['data'] = [
                     "total" => count($all_faturas),
+                    "renda_mensal" => get_renda($conn),
                     "faturas" => []
                 ];
 

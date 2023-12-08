@@ -263,3 +263,17 @@ function get_all_faturas(mysqli $conn): array | false{
     return false;
 
 }
+
+function get_renda(mysqli $conn): float | false {
+    // String de consulta
+    $sql = "SELECT SUM(preco) AS renda_mensal FROM Locacao
+            WHERE saida IS NOT NULL AND TIMESTAMPDIFF(DAY, saida, NOW()) < 30";
+
+    // Execução da consulta
+    if ($result = mysqli_query($conn, $sql)) {
+        $row = mysqli_fetch_assoc($result);
+        return (float) $row['renda_mensal'];
+    }
+
+    return false;
+}
